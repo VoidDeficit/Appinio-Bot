@@ -5,6 +5,8 @@ import re
 import time
 import os
 import xml.etree.ElementTree as ET
+import subprocess
+
 
 def main():
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -21,39 +23,44 @@ def main():
     device_name = str(device).split(" ")[3].replace(">","")
     print("ID:",device_name)  
     
-    Android_XML = os.popen('adb exec-out uiautomator dump /dev/tty')
-    output = Android_XML.read().replace("UI hierchary dumped to: /dev/tty","")
-    element = ET.XML(output)
-    ET.indent(element)
-    final_output = ET.tostring(element, encoding='unicode')
+    while(True):
+        Android_XML = subprocess.Popen('cmd /u /c adb exec-out uiautomator dump /dev/tty', stdout=subprocess.PIPE)
+        result = Android_XML.communicate()
+        output = result[0].decode('utf-8').replace("UI hierchary dumped to: /dev/tty","")
+        #print(output)
 
-    with open('Android_XML.xml', 'w') as f:
-        f.write(final_output)
+        element = ET.XML(output)
+        ET.indent(element)
+        final_output = str(ET.tostring(element, encoding='unicode'))
 
-    root = ET.fromstring(output)
+        with open('Android_XML.xml', 'w', encoding='utf-8') as f:
+            f.write(final_output)
 
-    #14
-    bounds = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3].attrib["bounds"]
-    coord = bounds[:len(bounds)-1].replace("[","")
-    print(coord)
-    coord = re.split(r'[,\]]+', coord)
-    print(coord)
+        root = ET.fromstring(output)
 
-    Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
-    Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+        #14
+        click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
+        #Check if android.widget.ImageView
+        if str(click_element.attrib["class"]) == "android.widget.ImageView":
+            click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+            if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
 
-    print(Xpoint,Ypoint)
+        bounds = click_element.attrib["bounds"]
+        coord = bounds[:len(bounds)-1].replace("[","")
+        print(coord)
+        coord = re.split(r'[,\]]+', coord)
+        print(coord)
 
-    device.shell(f'input tap {Xpoint} {Ypoint}')
+        Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+        Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
 
-    """
-    for child in root:
-        print(child.tag, child.attrib)
+        print(Xpoint,Ypoint)
 
-    for neighbor in root.iter('Ich bleibe bei ihr und Pflege sie'):
-        print(neighbor.attrib)
-    """
-    
+        device.shell(f'input tap {Xpoint} {Ypoint}')
+        time.sleep(0.1)
+        device.shell("input swipe 500 1000 500 300 50")
+        
     
 def appinio_login(device,email,pws):
     #Clear Appinio Data
