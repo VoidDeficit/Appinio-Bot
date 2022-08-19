@@ -1,6 +1,7 @@
 from ppadb.client import Client
 import pytesseract
 from PIL import Image
+import re
 import time
 import os
 import xml.etree.ElementTree as ET
@@ -31,14 +32,27 @@ def main():
 
     root = ET.fromstring(output)
 
-    print(root)
+    #14
+    bounds = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3].attrib["bounds"]
+    coord = bounds[:len(bounds)-1].replace("[","")
+    print(coord)
+    coord = re.split(r'[,\]]+', coord)
+    print(coord)
 
+    Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+    Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+    print(Xpoint,Ypoint)
+
+    device.shell(f'input tap {Xpoint} {Ypoint}')
+
+    """
     for child in root:
         print(child.tag, child.attrib)
 
     for neighbor in root.iter('Ich bleibe bei ihr und Pflege sie'):
         print(neighbor.attrib)
-
+    """
     
     
 def appinio_login(device,email,pws):
