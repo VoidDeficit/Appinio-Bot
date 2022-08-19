@@ -3,12 +3,13 @@ import pytesseract
 from PIL import Image
 import time
 import os
+import xml.etree.ElementTree as ET
 
 def main():
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
     adb = Client(host='127.0.0.1', port=5037)
-    adb.remote_connect("127.0.0.1", 62001)
+    #adb.remote_connect("127.0.0.1", 62001)
     devices = adb.devices()
 
     if len(devices) == 0:
@@ -18,9 +19,27 @@ def main():
     device = devices[0]
     device_name = str(device).split(" ")[3].replace(">","")
     print("ID:",device_name)  
+    
+    Android_XML = os.popen('adb exec-out uiautomator dump /dev/tty')
+    output = Android_XML.read().replace("UI hierchary dumped to: /dev/tty","")
+    element = ET.XML(output)
+    ET.indent(element)
+    final_output = ET.tostring(element, encoding='unicode')
 
-    check_for_level_and_present(device,device_name)
- 
+    with open('Android_XML.xml', 'w') as f:
+        f.write(final_output)
+
+    root = ET.fromstring(output)
+
+    print(root)
+
+    for child in root:
+        print(child.tag, child.attrib)
+
+    for neighbor in root.iter('Ich bleibe bei ihr und Pflege sie'):
+        print(neighbor.attrib)
+
+    
     
 def appinio_login(device,email,pws):
     #Clear Appinio Data
