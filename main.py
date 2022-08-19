@@ -11,6 +11,8 @@ import subprocess
 def main():
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
+    share_link = "https://appinio.page.link/"
+
     adb = Client(host='127.0.0.1', port=5037)
     #adb.remote_connect("127.0.0.1", 62001)
     devices = adb.devices()
@@ -29,14 +31,17 @@ def main():
         output = result[0].decode('utf-8').replace("UI hierchary dumped to: /dev/tty","")
         #print(output)
 
+        
+        """
         element = ET.XML(output)
         ET.indent(element)
         final_output = str(ET.tostring(element, encoding='unicode'))
 
         with open('Android_XML.xml', 'w', encoding='utf-8') as f:
             f.write(final_output)
-
+        """
         root = ET.fromstring(output)
+        
 
         #14
         click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
@@ -48,9 +53,7 @@ def main():
 
         bounds = click_element.attrib["bounds"]
         coord = bounds[:len(bounds)-1].replace("[","")
-        print(coord)
         coord = re.split(r'[,\]]+', coord)
-        print(coord)
 
         Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
         Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
@@ -58,7 +61,6 @@ def main():
         print(Xpoint,Ypoint)
 
         device.shell(f'input tap {Xpoint} {Ypoint}')
-        time.sleep(0.1)
         device.shell("input swipe 500 1000 500 300 50")
         
     
