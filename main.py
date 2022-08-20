@@ -9,6 +9,10 @@ import subprocess
 
 
 def main():
+    stream= os.popen('adb start-server')
+    output = stream.read()
+    output
+
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     share_link = "https://appinio.page.link/"
     nolevel = False
@@ -25,6 +29,10 @@ def main():
     device = devices[0]
     device_name = str(device).split(" ")[3].replace(">","")
     print("ID:",device_name)  
+
+    middle = str(device.shell("wm size")).split(" ")[2].replace("\n","").split("x")
+    middle = int(middle[0])/2,int(middle[1])/2
+    print(middle)
     
     while(True):
         nolevel = False
@@ -100,25 +108,31 @@ def main():
         except:
             nopresent = False
         
+
         print(nolevel,nopresent)
         if not nolevel and not nopresent:
-            #14
-            click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
+            
 
-            #Check if android.widget.ImageView
-            if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+            try:
+                #14
+                click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
+
+                #Check if android.widget.ImageView
                 if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
-
-            bounds = click_element.attrib["bounds"]
-            coord = bounds[:len(bounds)-1].replace("[","")
-            coord = re.split(r'[,\]]+', coord)
-            Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
-            Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
-            print(Xpoint,Ypoint)
-            device.shell(f'input tap {Xpoint} {Ypoint}')
-            device.shell("input swipe 500 1000 500 300 50")
+                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+                    if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
+                bounds = click_element.attrib["bounds"]
+                coord = bounds[:len(bounds)-1].replace("[","")
+                coord = re.split(r'[,\]]+', coord)
+                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+                print(Xpoint,Ypoint)
+                device.shell(f'input tap {Xpoint} {Ypoint}')
+                device.shell("input swipe 500 1000 500 300 50")
+            except:
+                device.shell(f'input tap {middle[0]} {middle[1]}')
+                device.shell("input swipe 500 1000 500 300 50")
         
     
 def appinio_login(device,email,pws):
