@@ -10,8 +10,9 @@ import subprocess
 
 def main():
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
     share_link = "https://appinio.page.link/"
+    nolevel = False
+    nopresent = False
 
     adb = Client(host='127.0.0.1', port=5037)
     #adb.remote_connect("127.0.0.1", 62001)
@@ -26,42 +27,99 @@ def main():
     print("ID:",device_name)  
     
     while(True):
+        nolevel = False
+        nopresent = False
         Android_XML = subprocess.Popen('cmd /u /c adb exec-out uiautomator dump /dev/tty', stdout=subprocess.PIPE)
         result = Android_XML.communicate()
         output = result[0].decode('utf-8').replace("UI hierchary dumped to: /dev/tty","")
         #print(output)
 
-        
-        """
         element = ET.XML(output)
         ET.indent(element)
         final_output = str(ET.tostring(element, encoding='unicode'))
 
         with open('Android_XML.xml', 'w', encoding='utf-8') as f:
             f.write(final_output)
+            
         """
+        image = device.screencap()
+        with open(device_name+'.png', 'wb') as f:
+            f.write(image) 
+        """
+
         root = ET.fromstring(output)
+
+        #level Notification 
+        try:
+            level_element = root[0][0][0][0][0][0][0][0][0][2]
+            if ("Level" in level_element.attrib["content-desc"]):
+                print(level_element.attrib["content-desc"])
+                levelup_element = root[0][0][0][0][0][0][0][0][0][4]
+
+                bounds = levelup_element.attrib["bounds"]
+                coord = bounds[:len(bounds)-1].replace("[","")
+                coord = re.split(r'[,\]]+', coord)
+
+                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                device.shell(f'input tap {Xpoint} {Ypoint}')
+                nolevel = True
+        except:
+            nolevel = False
         
+        #Present Notification
+        try:
+            present_element = root[0][0][0][0][0][0][0][0][0][0]
+            print(present_element.attrib["content-desc"])
+            print(present_element.attrib["NAF"])
+            if (present_element.attrib["NAF"]) == "true":
+                bounds = present_element.attrib["bounds"]
+                coord = bounds[:len(bounds)-1].replace("[","")
+                coord = re.split(r'[,\]]+', coord)
 
-        #14
-        click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
-        #Check if android.widget.ImageView
-        if str(click_element.attrib["class"]) == "android.widget.ImageView":
-            click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                device.shell(f'input tap {Xpoint} {Ypoint}')
+                nopresent = True
+
+                present_button_element = root[0][0][0][0][0][0][0][0][0][3]
+                print(present_button_element.attrib["content-desc"])
+                if (present_button_element.attrib["content-desc"]) == "Coins erhalten":
+                    bounds = present_button_element.attrib["bounds"]
+                    coord = bounds[:len(bounds)-1].replace("[","")
+                    coord = re.split(r'[,\]]+', coord)
+
+                    Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                    Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                    device.shell(f'input tap {Xpoint} {Ypoint}')
+                    device.shell("input swipe 500 1000 500 300 50")
+                    time.sleep(1)
+                    nopresent = False
+        except:
+            nopresent = False
+        
+        print(nolevel,nopresent)
+        if not nolevel and not nopresent:
+            #14
+            click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
+
+            #Check if android.widget.ImageView
             if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
+                click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+                if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
 
-        bounds = click_element.attrib["bounds"]
-        coord = bounds[:len(bounds)-1].replace("[","")
-        coord = re.split(r'[,\]]+', coord)
-
-        Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
-        Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
-
-        print(Xpoint,Ypoint)
-
-        device.shell(f'input tap {Xpoint} {Ypoint}')
-        device.shell("input swipe 500 1000 500 300 50")
+            bounds = click_element.attrib["bounds"]
+            coord = bounds[:len(bounds)-1].replace("[","")
+            coord = re.split(r'[,\]]+', coord)
+            Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+            Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+            print(Xpoint,Ypoint)
+            device.shell(f'input tap {Xpoint} {Ypoint}')
+            device.shell("input swipe 500 1000 500 300 50")
         
     
 def appinio_login(device,email,pws):
