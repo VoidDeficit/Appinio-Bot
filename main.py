@@ -1,3 +1,4 @@
+from asyncore import read
 from ppadb.client import Client
 import pytesseract
 from PIL import Image
@@ -17,44 +18,61 @@ def main():
     share_link = "https://appinio.page.link/"
     nolevel = False
     nopresent = False
-
+    
     adb = Client(host='127.0.0.1', port=5037)
     #adb.remote_connect("127.0.0.1", 62001)
+
+    #device = adb.device("57ab1a35")
+    device = adb.device("emulator-5554")
+
+    """
     devices = adb.devices()
+    print(devices)
 
     if len(devices) == 0:
         print('loading')
         main()
 
-    device = devices[0]
+    device = devices[1]
+    """
+
     device_name = str(device).split(" ")[3].replace(">","")
     print("ID:",device_name)  
 
     middle = str(device.shell("wm size")).split(" ")[2].replace("\n","").split("x")
     middle = int(middle[0])/2,int(middle[1])/2
-    print(middle)
+    print("CENTER:",middle)
     
     while(True):
+        final_output = ""
+        adb = Client(host='127.0.0.1', port=5037)
+        #adb.remote_connect("127.0.0.1", 62001)
+
+        #device = adb.device("57ab1a35")
+        device = adb.device("emulator-5554")
+
         nolevel = False
         nopresent = False
 
         image = device.screencap()
-        with open(device_name+'.png', 'wb') as f:
+        with open('phone.png', 'wb') as f:
             f.write(image) 
 
-        Android_XML = subprocess.Popen('cmd /u /c adb exec-out uiautomator dump /dev/tty', stdout=subprocess.PIPE)
-        result = Android_XML.communicate()
-        output = result[0].decode('utf-8').replace("UI hierchary dumped to: /dev/tty","")
-        #print(output)
+        device.shell("uiautomator dump")
+        device.pull("/sdcard/window_dump.xml","window_dump.xml")
 
-        element = ET.XML(output)
+        with open('window_dump.xml',encoding='utf-8') as f:
+            final_output = f.read()
+
+        element = ET.XML(final_output)
         ET.indent(element)
         final_output = str(ET.tostring(element, encoding='unicode'))
 
-        with open('Android_XML.xml', 'w', encoding='utf-8') as f:
+        with open('window_dump.xml', 'w', encoding='utf-8') as f:
             f.write(final_output)
 
-        root = ET.fromstring(output)
+        root = ET.fromstring(final_output)
+        #print(root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3].attrib)
 
         #level Notification 
         try:
@@ -111,8 +129,6 @@ def main():
 
         print(nolevel,nopresent)
         if not nolevel and not nopresent:
-            
-
             try:
                 #14
                 click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
@@ -122,6 +138,7 @@ def main():
                     click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
                     if str(click_element.attrib["class"]) == "android.widget.ImageView":
                         click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
+
                 bounds = click_element.attrib["bounds"]
                 coord = bounds[:len(bounds)-1].replace("[","")
                 coord = re.split(r'[,\]]+', coord)
