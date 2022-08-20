@@ -1,0 +1,1 @@
+foreach ($i in 555..579) { adb connect localhost:"${i}5"}
