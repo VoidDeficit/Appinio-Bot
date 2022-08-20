@@ -162,6 +162,8 @@ def main(x_device):
 if __name__ == '__main__':
     x2 = ""
     count = 0
+    os.popen('adb ')
+    time.sleep(2)
     stream = os.popen('adb devices')
     output = stream.read().splitlines()
     output.pop(len(output)-1)
