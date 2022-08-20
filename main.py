@@ -29,6 +29,11 @@ def main():
     while(True):
         nolevel = False
         nopresent = False
+
+        image = device.screencap()
+        with open(device_name+'.png', 'wb') as f:
+            f.write(image) 
+
         Android_XML = subprocess.Popen('cmd /u /c adb exec-out uiautomator dump /dev/tty', stdout=subprocess.PIPE)
         result = Android_XML.communicate()
         output = result[0].decode('utf-8').replace("UI hierchary dumped to: /dev/tty","")
@@ -40,12 +45,6 @@ def main():
 
         with open('Android_XML.xml', 'w', encoding='utf-8') as f:
             f.write(final_output)
-            
-        """
-        image = device.screencap()
-        with open(device_name+'.png', 'wb') as f:
-            f.write(image) 
-        """
 
         root = ET.fromstring(output)
 
