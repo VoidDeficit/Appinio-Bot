@@ -41,6 +41,7 @@ def main(x_device):
 
     middle = str(device.shell("wm size")).split(" ")[2].replace("\n","").split("x")
     middle = int(middle[0])/2,int(middle[1])/2
+
     print("CENTER:",middle)
     
     while(True):
@@ -127,7 +128,7 @@ def main(x_device):
                     Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
 
                     device.shell(f'input tap {Xpoint} {Ypoint}')
-                    device.shell("input swipe 500 1000 500 300 50")
+                    device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
                     time.sleep(1)
                     print("PRESENT OPENED")
                     nopresent = False
@@ -154,16 +155,14 @@ def main(x_device):
                 Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
                 print("CLICK X:",Xpoint,"CLICK Y",Ypoint)
                 device.shell(f'input tap {Xpoint} {Ypoint}')
-                device.shell("input swipe 500 1000 500 300 50")
+                device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
             except:
                 device.shell(f'input tap {middle[0]} {middle[1]}')
-                device.shell("input swipe 500 1000 500 300 50")   
+                device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50")  
 
 if __name__ == '__main__':
     x2 = ""
     count = 0
-    os.popen('adb ')
-    time.sleep(2)
     stream = os.popen('adb devices')
     output = stream.read().splitlines()
     output.pop(len(output)-1)
