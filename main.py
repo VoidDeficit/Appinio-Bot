@@ -1,21 +1,16 @@
-from asyncore import read
 from ppadb.client import Client
-import pytesseract
-from PIL import Image
 import re
 import time
 import os
+from os.path import exists
 import xml.etree.ElementTree as ET
 import subprocess
+
 
 #am start -a android.intent.action.VIEW -d https://appinio.page.link/MbkH
 
 def main(x_device):
-    stream= os.popen('adb start-server')
-    output = stream.read()
-    output
-
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    #pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     share_link = "https://appinio.page.link/"
     nolevel = False
     nopresent = False
@@ -38,6 +33,9 @@ def main(x_device):
 
     device_name = str(device).split(" ")[3].replace(">","")
     print("ID:",device_name)  
+
+    device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/MbkH")
+    
 
     middle = str(device.shell("wm size")).split(" ")[2].replace("\n","").split("x")
     middle = int(middle[0])/2,int(middle[1])/2
@@ -136,7 +134,7 @@ def main(x_device):
             nopresent = False
         
 
-        print("LEVEL_NOTY:",nolevel,"PRESENT_NOTY:",nopresent)
+        #print("LEVEL_NOTY:",nolevel,"PRESENT_NOTY:",nopresent)
         if not nolevel and not nopresent:
             try:
                 #14
@@ -161,6 +159,16 @@ def main(x_device):
                 device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50")  
 
 if __name__ == '__main__':
+    if not exists("last_connections.txt"):
+        print("Loading Emulators")
+        cmd = ["PowerShell", "-ExecutionPolicy", "Unrestricted", "-File", ".\cmd.ps1"]  # Specify relative or absolute path to the script
+        #ec = subprocess.call(cmd)
+        ec = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        out, err = ec.communicate()
+        #print("Powershell returned: {0:d}".format(ec))
+        with open("last_connections.txt", 'w', encoding='utf-8') as f:
+            f.write(str(out.decode('utf-8')))
+
     x2 = ""
     count = 0
     stream = os.popen('adb devices')
