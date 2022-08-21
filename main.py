@@ -48,6 +48,10 @@ def main(x_device):
         nopresent = False
 
         device.shell("uiautomator dump")
+
+        if not exists("./dumps/"):
+            os.mkdir("./dumps/") 
+
         device.pull("/sdcard/window_dump.xml","./dumps/"+device_name+"_window_dump.xml")
 
         with open("./dumps/"+device_name+'_window_dump.xml',encoding='utf-8') as f:
