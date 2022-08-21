@@ -6,24 +6,14 @@ from os.path import exists
 import xml.etree.ElementTree as ET
 import subprocess
 
-
-#am start -a android.intent.action.VIEW -d https://appinio.page.link/MbkH
-
 def main(x_device):
-    #pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     share_link = "https://appinio.page.link/"
     nolevel = False
     nopresent = False
     
     adb = Client(host='127.0.0.1', port=5037)
-    #adb.remote_connect("127.0.0.1", 62001)
-
-    #device = adb.device("57ab1a35")
-    #device = adb.device("emulator-5554")
-
     
     devices = adb.devices()
-    #print(devices)
 
     if len(devices) == 0:
         print('loading')
@@ -34,7 +24,7 @@ def main(x_device):
     device_name = str(device).split(" ")[3].replace(">","")
     print("ID:",device_name)  
 
-    device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/MbkH")
+    #device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/####")
     
 
     middle = str(device.shell("wm size")).split(" ")[2].replace("\n","").split("x")
@@ -45,14 +35,8 @@ def main(x_device):
     while(True):
         final_output = ""
         adb = Client(host='127.0.0.1', port=5037)
-        #adb.remote_connect("127.0.0.1", 62001)
-
-        #device = adb.device("57ab1a35")
-        #device = adb.device("emulator-5554")
-
         
         devices = adb.devices()
-        #print(devices)
 
         if len(devices) == 0:
             print('loading')
@@ -77,7 +61,6 @@ def main(x_device):
             f.write(final_output)
 
         root = ET.fromstring(final_output)
-        #print(root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3].attrib)
 
         #level Notification 
         try:
@@ -102,8 +85,6 @@ def main(x_device):
         #Present Notification
         try:
             present_element = root[0][0][0][0][0][0][0][0][0][0]
-            #print(present_element.attrib["content-desc"])
-            #print(present_element.attrib["NAF"])
             if (present_element.attrib["NAF"]) == "true":
                 bounds = present_element.attrib["bounds"]
                 coord = bounds[:len(bounds)-1].replace("[","")
@@ -133,11 +114,8 @@ def main(x_device):
         except:
             nopresent = False
         
-
-        #print("LEVEL_NOTY:",nolevel,"PRESENT_NOTY:",nopresent)
         if not nolevel and not nopresent:
             try:
-                #14
                 click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
 
                 #Check if android.widget.ImageView
@@ -159,6 +137,7 @@ def main(x_device):
                 device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50")  
 
 if __name__ == '__main__':
+    """
     if not exists("last_connections.txt"):
         print("Loading Emulators")
         cmd = ["PowerShell", "-ExecutionPolicy", "Unrestricted", "-File", ".\cmd.ps1"]  # Specify relative or absolute path to the script
@@ -168,7 +147,8 @@ if __name__ == '__main__':
         #print("Powershell returned: {0:d}".format(ec))
         with open("last_connections.txt", 'w', encoding='utf-8') as f:
             f.write(str(out.decode('utf-8')))
-
+    """
+    
     x2 = ""
     count = 0
     stream = os.popen('adb devices')
