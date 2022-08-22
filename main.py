@@ -15,14 +15,17 @@ def main(x_device):
     
     devices = adb.devices()
 
-    if len(devices) == 0:
-        print('loading')
-        main()
-
     device = devices[x_device]
 
     device_name = str(device).split(" ")[3].replace(">","")
-    print("ID:",device_name)  
+    #print("ID:",device_name)
+
+    current_app = device.shell("dumpsys window windows")
+    if not "com.appinio.appinio" in str(current_app):
+        if input("Please open Appinio\nSay y to continue:\n") == "y":
+            main(x_device)
+        else:
+            main(x_device)
 
     #device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/####")
     
@@ -146,6 +149,10 @@ def main(x_device):
 
 if __name__ == '__main__':
     """
+    if len(devices) == 0:
+        print('loading')
+        main()
+
     if not exists("last_connections.txt"):
         print("Loading Emulators")
         cmd = ["PowerShell", "-ExecutionPolicy", "Unrestricted", "-File", ".\cmd.ps1"]  # Specify relative or absolute path to the script
