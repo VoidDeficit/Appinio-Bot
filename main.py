@@ -26,10 +26,14 @@ def main(x_device):
 
     #device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/####")
     
-
-    middle = str(device.shell("wm size")).split(" ")[2].replace("\n","").split("x")
+    
+    middle = str(device.shell("wm size"))
+    if ("Override" in middle):
+        middle = middle.splitlines()[1].split(" ")[2].replace("\n","").split("x")
+    else:
+        middle = middle.split(" ")[2].replace("\n","").split("x")
+        
     middle = int(middle[0])/2,int(middle[1])/2
-
     print("CENTER:",middle)
     
     while(True):
@@ -133,7 +137,7 @@ def main(x_device):
                 coord = re.split(r'[,\]]+', coord)
                 Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
                 Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
-                print("CLICK X:",Xpoint,"CLICK Y",Ypoint)
+                print("CLICK X Y:",Xpoint,Ypoint)
                 device.shell(f'input tap {Xpoint} {Ypoint}')
                 device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
             except:
