@@ -8,6 +8,7 @@ import subprocess
 
 def main(x_device):
     share_link = "https://appinio.page.link/"
+    lines = []
     nolevel = False
     nopresent = False
     
@@ -19,13 +20,18 @@ def main(x_device):
 
     device_name = str(device).split(" ")[3].replace(">","")
     #print("ID:",device_name)
-
-    current_app = device.shell("dumpsys window windows")
-    if not "com.appinio.appinio" in str(current_app):
-        if input("Please open Appinio\nSay y to continue:\n") == "y":
+    
+    #Check if Appinio is opened
+    current_app = device.shell("dumpsys activity activities")
+    for line in str(current_app).splitlines():
+        if "Hist #0" in line:
+            lines.append(line.replace("      * ",""))
+    if not "com.appinio.appinio" in lines[0]:
+        anser = input("Please open Appinio\ny to continue:\n").lower()
+        if anser == "y":
             main(x_device)
         else:
-            main(x_device)
+            main(x_device)            
 
     #device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/####")
     
