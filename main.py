@@ -1,41 +1,27 @@
 from ppadb.client import Client
 import re
 import time
-import os
+import os,glob
 from os.path import exists
 import xml.etree.ElementTree as ET
 import subprocess
 
 def main(x_device):
     share_link = "https://appinio.page.link/"
-    lines = []
     nolevel = False
     nopresent = False
     
     adb = Client(host='127.0.0.1', port=5037)
     
     devices = adb.devices()
-
     device = devices[x_device]
 
     device_name = str(device).split(" ")[3].replace(">","")
-    #print("ID:",device_name)
-    
-    #Check if Appinio is opened
-    current_app = device.shell("dumpsys activity activities")
-    for line in str(current_app).splitlines():
-        if "Hist #0" in line:
-            lines.append(line.replace("      * ",""))
-    if not "com.appinio.appinio" in lines[0]:
-        anser = input("Please open Appinio\ny to continue:\n").lower()
-        if anser == "y":
-            main(x_device)
-        else:
-            main(x_device)            
+    #print("ID:",device_name)            
 
     #device.shell("am start -a android.intent.action.VIEW -d https://appinio.page.link/####")
     
-    
+    #Get the center of the screen
     middle = str(device.shell("wm size"))
     if ("Override" in middle):
         middle = middle.splitlines()[1].split(" ")[2].replace("\n","").split("x")
@@ -44,26 +30,39 @@ def main(x_device):
         
     middle = int(middle[0])/2,int(middle[1])/2
     print("CENTER:",middle)
+
+    if exists("./dumps/"):
+        files = glob.glob('./dumps/*')
+        for f in files:
+            os.remove(f)
     
     while(True):
         final_output = ""
         adb = Client(host='127.0.0.1', port=5037)
         
         devices = adb.devices()
-
-        if len(devices) == 0:
-            print('loading')
-            main()
-
         device = devices[x_device]
 
         nolevel = False
         nopresent = False
 
+        #Check if Appinio is opened
+        current_app = device.shell("dumpsys activity activities")
+        lines = []
+        for line in str(current_app).splitlines():
+            if "Hist #0" in line:
+                lines.append(line)
+        if not "com.appinio.appinio" in lines[0]:
+            anser = input("Please open Appinio\npress y to continue:\n").lower()
+            if anser == "y":
+                main(x_device)
+            else:
+                main(x_device)
+
         device.shell("uiautomator dump")
 
         if not exists("./dumps/"):
-            os.mkdir("./dumps/") 
+            os.mkdir("./dumps/")
 
         device.pull("/sdcard/window_dump.xml","./dumps/"+device_name+"_window_dump.xml")
 
