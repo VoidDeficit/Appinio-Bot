@@ -10,6 +10,7 @@ def main(x_device):
     share_link = "https://appinio.page.link/"
     nolevel = False
     nopresent = False
+    noquestions = False
     
     adb = Client(host='127.0.0.1', port=5037)
     
@@ -77,6 +78,19 @@ def main(x_device):
             f.write(final_output)
 
         root = ET.fromstring(final_output)
+
+
+        #Out Of Questions
+        try:
+            none_questions = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0]
+            if ("Du hast das Ende erreicht." in none_questions.attrib["content-desc"]):
+                device.shell(f"input swipe {middle[0]} {middle[1]-middle[1]/2} {middle[0]} {middle[1]+middle[1]/2} 50")
+                time.sleep(0.1)
+                device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
+                print("You've reached the end")
+                noquestions = True
+        except:
+            noquestions = False
 
         #level Notification 
         try:
