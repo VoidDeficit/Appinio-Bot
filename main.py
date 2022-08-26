@@ -46,6 +46,7 @@ def main(x_device):
 
         nolevel = False
         nopresent = False
+        noquestions = False
 
         #Check if Appinio is opened
         current_app = device.shell("dumpsys activity activities")
@@ -84,10 +85,13 @@ def main(x_device):
         try:
             none_questions = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0]
             if ("Du hast das Ende erreicht." in none_questions.attrib["content-desc"]):
-                device.shell(f"input swipe {middle[0]} {middle[1]-middle[1]/2} {middle[0]} {middle[1]+middle[1]/2} 50")
-                time.sleep(0.1)
-                device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
-                print("You've reached the end")
+                #device.shell(f"input swipe {middle[0]} {middle[1]-middle[1]/2} {middle[0]} {middle[1]+middle[1]/2} 50")
+                device.shell("am force-stop com.appinio.appinio")
+                time.sleep(1)
+                device.shell("monkey -p com.appinio.appinio -c android.intent.category.LAUNCHER 1")
+                #device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
+                #print("You've reached the end")
+                time.sleep(5)
                 noquestions = True
         except:
             noquestions = False
@@ -144,7 +148,7 @@ def main(x_device):
         except:
             nopresent = False
         
-        if not nolevel and not nopresent:
+        if not nolevel and not nopresent and not noquestions:
             try:
                 click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
 
