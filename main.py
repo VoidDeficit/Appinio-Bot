@@ -6,6 +6,29 @@ from os.path import exists
 import xml.etree.ElementTree as ET
 import subprocess
 
+
+def get_connected_devices():
+    devices = []
+    output = subprocess.check_output([".\\platform-tools\\adb.exe", "devices"]).decode("utf-8")
+    for line in output.split("\n"):
+        if "device" in line:
+            devices.append(line.split("\t")[0])
+    return devices
+
+def get_foreground_activity(output):
+    output_str = output
+    lines = output_str.split("\n")
+    for line in lines:
+        if "mCurrentFocus" in line:
+            # Der Name der Activity befindet sich zwischen den ersten zwei '/'
+            line = line.split()[2].split('/')[0]
+            return line
+        else:
+            if "imeLayeringTarget" in line:
+                line = line.split()[6].split('/')[0]
+                return line
+    return None
+
 def main(x_device):
     share_link = "https://appinio.page.link/"
     nolevel = False
@@ -49,13 +72,8 @@ def main(x_device):
         noquestions = False
 
         #Check if Appinio is opened
-        current_app = device.shell("dumpsys activity activities")
-        lines = []
-        for line in str(current_app).splitlines():
-            if "Hist #0" in line:
-                lines.append(line)
-        if not "com.appinio.appinio" in lines[0]:
-            anser = input("Please open Appinio\npress y to continue:\n").lower()
+        if not "com.appinio.appinio" in get_foreground_activity(device.shell("dumpsys window windows")):
+            anser = input("Please open Appinio\nEnter any to continue:\n").lower()
             if anser == "y":
                 main(x_device)
             else:
@@ -83,12 +101,18 @@ def main(x_device):
 
         #Out Of Questions
         try:
-            none_questions = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0]
+            #check if layout is new or not
+            try:
+                none_questions = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0]
+            except:
+                none_questions = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0]
+
             if ("Du hast das Ende erreicht." in none_questions.attrib["content-desc"]):
+                #print("Out of questions")
                 #device.shell(f"input swipe {middle[0]} {middle[1]-middle[1]/2} {middle[0]} {middle[1]+middle[1]/2} 50")
-                device.shell("am force-stop com.appinio.appinio")
-                time.sleep(1)
-                device.shell("monkey -p com.appinio.appinio -c android.intent.category.LAUNCHER 1")
+                #device.shell("am force-stop com.appinio.appinio")
+                #time.sleep(1)
+                #device.shell("monkey -p com.appinio.appinio -c android.intent.category.LAUNCHER 1")
                 #device.shell(f"input swipe {middle[0]} {middle[1]+middle[1]/2} {middle[0]} {middle[1]-middle[1]/2} 50") 
                 #print("You've reached the end")
                 time.sleep(5)
@@ -147,16 +171,25 @@ def main(x_device):
                     nopresent = False
         except:
             nopresent = False
-        
+
         if not nolevel and not nopresent and not noquestions:
             try:
-                click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
-
-                #Check if android.widget.ImageView
-                if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+                #check if layout is new or not
+                try:
+                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][3]
+                    #Check if android.widget.ImageView
                     if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
+                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][4]
+                        if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
+                except:
+                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][3]
+                    #Check if android.widget.ImageView
+                    if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][4]
+                        if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][5]
+
 
                 bounds = click_element.attrib["bounds"]
                 coord = bounds[:len(bounds)-1].replace("[","")
@@ -187,18 +220,12 @@ if __name__ == '__main__':
             f.write(str(out.decode('utf-8')))
     """
     
-    x2 = ""
-    count = 0
-    stream = os.popen('.\\platform-tools\\adb.exe devices')
-    output = stream.read().splitlines()
-    output.pop(len(output)-1)
-    output.pop(0)
+    devices = get_connected_devices()
+    devices.pop(0)
 
-    for x in output:
-        x = x.replace("device","online")
-        x2 = x2 + x + " " + str(count) +"\n"
+    count = 0
+    for x in devices:
+        print ('{:<15}'.format(x)+" "+str(count))
         count += 1
-        output = x2
-    print(output)
     print("Choose:")
     main(int(input()))
