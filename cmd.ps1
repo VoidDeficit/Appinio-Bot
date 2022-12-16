@@ -1,1 +1,1 @@
-foreach ($i in 555..579) { adb connect localhost:"${i}5"}
+foreach ($i in 555..579) { .\platform-tools\adb.exe connect localhost:"${i}5"}

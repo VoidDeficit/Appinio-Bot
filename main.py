@@ -189,7 +189,7 @@ if __name__ == '__main__':
     
     x2 = ""
     count = 0
-    stream = os.popen('adb devices')
+    stream = os.popen('.\\platform-tools\\adb.exe devices')
     output = stream.read().splitlines()
     output.pop(len(output)-1)
     output.pop(0)
