@@ -2,3 +2,4 @@ dumps/
 last_connections.txt
 profiles.txt
 whitelist.txt
+*.pyc
