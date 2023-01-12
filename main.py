@@ -7,9 +7,9 @@ import xml.etree.ElementTree as ET
 import subprocess
 import modules.retrive_port as retrive_port
 import modules.adb_info as adb_info
-import modules.notification_handler as notification_handler
 
 share_link = "https://appinio.page.link/"
+
 
 
 def main(x_device):
@@ -75,16 +75,80 @@ def main(x_device):
 
         root = ET.fromstring(final_output)
 
-        #out of questions
-        lastAction,noquestions = notification_handler.check_out_of_questions(root)
-        if (noquestions):
-            time.sleep(5)
+
+        """
+        Überprüft, ob das Ende der Fragen erreicht wurde.
+        """
+        try:
+            # Überprüfe, ob das Layout neu ist oder nicht
+            try:
+                none_questions = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0]
+            except:
+                none_questions = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0]
+
+            if ("Du hast das Ende erreicht." in none_questions.attrib["content-desc"]):
+                lastAction = "Out of questions"
+                noquestions = True
+                time.sleep(5)
+        except:
+            noquestions = False
         
-        #level notification 
-        lastAction,nolevel = notification_handler.check_level_notification(root,x_device)
+
+        """
+        Überprüft, ob eine Benachrichtigung über ein neues Level vorliegt.
+        """
+        try:
+            level_element = root[0][0][0][0][0][0][0][0][0][2]
+            if ("Level" in level_element.attrib["content-desc"]):
+                levelup_element = root[0][0][0][0][0][0][0][0][0][4]
+            
+                bounds = levelup_element.attrib["bounds"]
+                coord = bounds[:len(bounds)-1].replace("[","")
+                coord = re.split(r'[,\]]+', coord)
+
+                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                device.shell(f'input tap {Xpoint} {Ypoint}')
+                lastAction = "LEVEL DIALOG CLOSED"
+                nolevel = True
+        except:
+            nolevel = False
         
-        #present notification
-        lastAction,nopresent = notification_handler.check_present_notification(root,x_device,center)
+        
+        """
+        Überprüft, ob eine Benachrichtigung über ein neues Geschenk vorliegt.
+        """
+        try:
+            present_element = root[0][0][0][0][0][0][0][0][0][0]
+            if (present_element.attrib["NAF"]) == "true":
+                bounds = present_element.attrib["bounds"]
+                coord = bounds[:len(bounds)-1].replace("[","")
+                coord = re.split(r'[,\]]+', coord)
+
+                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                device.shell(f'input tap {Xpoint} {Ypoint}')
+                nopresent = True
+                lastAction = "PRESENT OPENED"
+
+                present_button_element = root[0][0][0][0][0][0][0][0][0][3]
+                #print(present_button_element.attrib["content-desc"])
+                if (present_button_element.attrib["content-desc"]) == "Coins erhalten":
+                    bounds = present_button_element.attrib["bounds"]
+                    coord = bounds[:len(bounds)-1].replace("[","")
+                    coord = re.split(r'[,\]]+', coord)
+
+                    Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                    Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                    device.shell(f'input tap {Xpoint} {Ypoint}')
+                    device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50") 
+                    nopresent = False
+                    lastAction = "PRESENT CLOSED"
+        except:
+            nopresent = False
 
         if not nolevel and not nopresent and not noquestions:
             try:
@@ -118,7 +182,6 @@ def main(x_device):
                 device.shell(f'input tap {center[0]} {center[1]}')
                 device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50")  
         
-        lastActionOld = lastAction
         if lastAction == lastActionOld:
             repetition = repetition + 1
         else:
@@ -126,6 +189,7 @@ def main(x_device):
 
         print(f"                     ", end='\r')
         print(lastAction,repetition, end='\r')
+        lastActionOld = lastAction
 
 
 if __name__ == '__main__':
