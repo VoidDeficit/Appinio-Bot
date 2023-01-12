@@ -12,10 +12,13 @@ def get_connected_devices():
             devices.append(line.split("\t")[0])
     return devices
 
-def get_foreground_activity(output):
+def get_foreground_activity(x_device):
     """
     Gibt den Namen der Vordergrund-Activity eines ADB-Geräts zurück.
     """
+    adb = Client(host='127.0.0.1', port=5037)
+    device = adb.devices()[x_device]
+    output = device.shell("dumpsys window windows")
     output_str = str(output)
     lines = output_str.split("\n")
     for line in lines:
@@ -29,10 +32,12 @@ def get_foreground_activity(output):
                 return line
     return None
 
-def get_screen_center(device):
+def get_screen_center(x_device):
     """
     Gibt die Koordinaten des Mittelpunkts des Bildschirms eines ADB-Geräts zurück.
     """
+    adb = Client(host='127.0.0.1', port=5037)
+    device = adb.devices()[x_device]
     center = str(device.shell("wm size"))
     if ("Override" in center):
         center = center.splitlines()[1].split(" ")[2].replace("\n","").split("x")
