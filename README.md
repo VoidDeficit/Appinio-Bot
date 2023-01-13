@@ -4,4 +4,5 @@ Appinio-Bot is a Python script that allows users to quickly level up their Appin
 
 Currently, the script is only available in German, but users can easily modify the code to their desired language. This makes it accessible to a wider range of users, regardless of their language preference.
 
-With Appinio-Bot, users can save time and effort by automating the process of completing Quickies and leveling up their Appinio account. However, it's important to note that the script is currently only able to answer Quickies and no other tasks within the app.
+With Appinio-Bot, users can save time and effort.
+However, it's important to note that the script is currently only able to answer Quickies and no other tasks within the app.
