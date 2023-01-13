@@ -50,7 +50,7 @@ def main(x_device):
 
         #Check if Appinio is opened
         if not "com.appinio.appinio" in adb_info.get_foreground_activity(x_device):
-            anser = input("Please open Appinio\nEnter any to continue:\n").lower()
+            anser = input("Please open Appinio\nPress Enter to continue:\n").lower()
             if anser == "y":
                 main(x_device)
             else:
@@ -195,15 +195,20 @@ def main(x_device):
 if __name__ == '__main__':
     adb_port = retrive_port.adbPort()
     output = subprocess.run(['.\\platform-tools\\adb.exe', 'connect', '127.0.0.1:' + adb_port], capture_output=True)
-    if not ("already" in str(output.stdout.decode())):
+    if "bad port number" in str(output.stdout.decode()):
+        print("No Bluestacks X instances found")
+    if not adb_port == "none" and not ("already" in str(output.stdout.decode())):
         print("Connecting to Bluestacks X")
     
     devices = adb_info.get_connected_devices()
     devices.pop(0)
 
-    count = 0
-    for x in devices:
-        print ('{:<15}'.format(str(x).replace('127.0.0.1:' + adb_port, "Bluestacks X"))+" "+str(count))
-        count += 1
-    print("Choose:")
-    main(int(input()))
+    if not (devices == []):
+        count = 0
+        for x in devices:
+            print ('{:<15}'.format(str(x).replace('127.0.0.1:' + adb_port, "Bluestacks X"))+" "+str(count))
+            count += 1
+        print("Choose:")
+        main(int(input()))
+    else:
+        print("No devices found")
