@@ -1,16 +1,80 @@
 from ppadb.client import Client
 import re
-import time
 import os,glob
+from functools import reduce
+from operator import getitem
 from os.path import exists
 import xml.etree.ElementTree as ET
 import subprocess
 import modules.retrive_port as retrive_port
 import modules.adb_info as adb_info
 
+
 share_link = "https://appinio.page.link/"
 
+def check_end_of_questions(root):
+    index_list = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0]]
+    for i in index_list:
+        try:
+            none_questions = reduce(getitem, i, root)
+            if "Du hast das Ende erreicht." in none_questions.attrib["content-desc"]:
+                return True
+        except (IndexError, KeyError, AttributeError):
+            continue
+    return False
 
+def check_levelup_notification(root, device):
+    """
+    Überprüft, ob eine Benachrichtigung über ein neues Level vorliegt.
+    """
+    try:
+        level_element = root[0][0][0][0][0][0][0][0][0][2]
+        if ("Level" in level_element.attrib["content-desc"]):
+            levelup_element = root[0][0][0][0][0][0][0][0][0][4]
+
+            bounds = levelup_element.attrib["bounds"]
+            coord = bounds[:len(bounds)-1].replace("[","")
+            coord = re.split(r'[,\]]+', coord)
+
+            Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+            Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+            device.shell(f'input tap {Xpoint} {Ypoint}')
+            return True
+    except:
+        return False
+
+def open_present(root, device, center):
+    try:
+        present_element = root[0][0][0][0][0][0][0][0][0][0]
+        if (present_element.attrib["NAF"]) == "true":
+            bounds = present_element.attrib["bounds"]
+            coord = bounds[:len(bounds)-1].replace("[","")
+            coord = re.split(r'[,\]]+', coord)
+
+            Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+            Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+            device.shell(f'input tap {Xpoint} {Ypoint}')
+
+            present_button_element = root[0][0][0][0][0][0][0][0][0][3]
+            if (present_button_element.attrib["content-desc"]) == "Coins erhalten":
+                bounds = present_button_element.attrib["bounds"]
+                coord = bounds[:len(bounds)-1].replace("[","")
+                coord = re.split(r'[,\]]+', coord)
+
+                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
+                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
+
+                device.shell(f'input tap {Xpoint} {Ypoint}')
+                device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50") 
+                return True
+    except:
+        pass
+    return False
 
 def main(x_device):
     nolevel = False
@@ -18,7 +82,7 @@ def main(x_device):
     noquestions = False
     lastAction = ""
     lastActionOld = ""
-    repetition = 0
+    repetition = 1
     
     adb = Client(host='127.0.0.1', port=5037)
     device = adb.devices()[x_device]
@@ -30,7 +94,7 @@ def main(x_device):
     #time.sleep(2)    
     
     center = adb_info.get_screen_center(x_device)
-    print("CENTER:", center)
+    #print("CENTER:", center)
 
     if exists("./dumps/"):
         files = glob.glob('./dumps/*')
@@ -75,80 +139,17 @@ def main(x_device):
 
         root = ET.fromstring(final_output)
 
+        noquestions = check_end_of_questions(root)
+        if noquestions:
+            lastAction = "OUT OF QUESTIONS"
 
-        """
-        Überprüft, ob das Ende der Fragen erreicht wurde.
-        """
-        try:
-            # Überprüfe, ob das Layout neu ist oder nicht
-            try:
-                none_questions = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0]
-            except:
-                none_questions = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0]
-
-            if ("Du hast das Ende erreicht." in none_questions.attrib["content-desc"]):
-                lastAction = "Out of questions"
-                noquestions = True
-                time.sleep(5)
-        except:
-            noquestions = False
+        nolevel = check_levelup_notification(root, device)
+        if nolevel:
+            lastAction = "LEVEL DIALOG CLOSED"
         
-
-        """
-        Überprüft, ob eine Benachrichtigung über ein neues Level vorliegt.
-        """
-        try:
-            level_element = root[0][0][0][0][0][0][0][0][0][2]
-            if ("Level" in level_element.attrib["content-desc"]):
-                levelup_element = root[0][0][0][0][0][0][0][0][0][4]
-            
-                bounds = levelup_element.attrib["bounds"]
-                coord = bounds[:len(bounds)-1].replace("[","")
-                coord = re.split(r'[,\]]+', coord)
-
-                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
-                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
-
-                device.shell(f'input tap {Xpoint} {Ypoint}')
-                lastAction = "LEVEL DIALOG CLOSED"
-                nolevel = True
-        except:
-            nolevel = False
-        
-        
-        """
-        Überprüft, ob eine Benachrichtigung über ein neues Geschenk vorliegt.
-        """
-        try:
-            present_element = root[0][0][0][0][0][0][0][0][0][0]
-            if (present_element.attrib["NAF"]) == "true":
-                bounds = present_element.attrib["bounds"]
-                coord = bounds[:len(bounds)-1].replace("[","")
-                coord = re.split(r'[,\]]+', coord)
-
-                Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
-                Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
-
-                device.shell(f'input tap {Xpoint} {Ypoint}')
-                nopresent = True
-                lastAction = "PRESENT OPENED"
-
-                present_button_element = root[0][0][0][0][0][0][0][0][0][3]
-                #print(present_button_element.attrib["content-desc"])
-                if (present_button_element.attrib["content-desc"]) == "Coins erhalten":
-                    bounds = present_button_element.attrib["bounds"]
-                    coord = bounds[:len(bounds)-1].replace("[","")
-                    coord = re.split(r'[,\]]+', coord)
-
-                    Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
-                    Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
-
-                    device.shell(f'input tap {Xpoint} {Ypoint}')
-                    device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50") 
-                    nopresent = False
-                    lastAction = "PRESENT CLOSED"
-        except:
-            nopresent = False
+        nopresent = open_present(root, device, center)    
+        if nopresent:
+            lastAction = "PRESENT CLOSED"
 
         if not nolevel and not nopresent and not noquestions:
             try:
@@ -161,13 +162,20 @@ def main(x_device):
                         if str(click_element.attrib["class"]) == "android.widget.ImageView":
                             click_element = root[0][0][0][0][0][0][0][0][0][0][0][0][0][0][5]
                 except:
-                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][3]
-                    #Check if android.widget.ImageView
-                    if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][4]
+                    try:
+                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][3]
+                        #Check if android.widget.ImageView
                         if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][5]
-
+                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][4]
+                            if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                                click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][5]
+                    except:
+                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][3]
+                        #Check if android.widget.ImageView
+                        if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][4]
+                            if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                                click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][5]
 
                 bounds = click_element.attrib["bounds"]
                 coord = bounds[:len(bounds)-1].replace("[","")
@@ -175,19 +183,20 @@ def main(x_device):
                 Xpoint = (int(coord[2])-int(coord[0]))/2.0 + int(coord[0])
                 Ypoint = (int(coord[3])-int(coord[1]))/2.0 + int(coord[1])
                 #print("CLICK X Y:",Xpoint,Ypoint)
-                lastAction = "CLICK"
+                lastAction = "QUESTIONS ANSWER"
                 device.shell(f'input tap {Xpoint} {Ypoint}')
                 device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50") 
             except:
+                lastAction = "EVERYTHING HAS FAILED"
                 device.shell(f'input tap {center[0]} {center[1]}')
                 device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50")  
         
         if lastAction == lastActionOld:
             repetition = repetition + 1
         else:
-            repetition = 0
+            repetition = 1
 
-        print(f"                     ", end='\r')
+        print(f"                             ", end='\r')
         print(lastAction,repetition, end='\r')
         lastActionOld = lastAction
 
