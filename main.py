@@ -9,8 +9,15 @@ import subprocess
 import modules.retrive_port as retrive_port
 import modules.adb_info as adb_info
 
-
 share_link = "https://appinio.page.link/"
+
+def get_element(root,index_list):
+    for i in index_list:
+        if len(root) > i:
+            root = root[i]
+        else:
+            raise IndexError("child index out of range")
+    return root
 
 def check_end_of_questions(root):
     index_list = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -80,6 +87,7 @@ def main(x_device):
     nolevel = False
     nopresent = False
     noquestions = False
+    click = False
     lastAction = ""
     lastActionOld = ""
     repetition = 1
@@ -111,6 +119,8 @@ def main(x_device):
         nolevel = False
         nopresent = False
         noquestions = False
+        click = False
+
 
         #Check if Appinio is opened
         if not "com.appinio.appinio" in adb_info.get_foreground_activity(x_device):
@@ -170,12 +180,23 @@ def main(x_device):
                             if str(click_element.attrib["class"]) == "android.widget.ImageView":
                                 click_element = root[0][0][0][0][0][0][0][0][0][0][0][5][0][0][5]
                     except:
-                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][3]
-                        #Check if android.widget.ImageView
-                        if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][4]
+                        try:
+                            click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][3]
+                            #Check if android.widget.ImageView
                             if str(click_element.attrib["class"]) == "android.widget.ImageView":
-                                click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][5]
+                                click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][4]
+                                if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][4][0][0][5]
+                        except:
+                            try:
+                                click_element = root[0][0][0][0][0][0][0][0][0][0][0][3][0][0][3]
+                                #Check if android.widget.ImageView
+                                if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                                    click_element = root[0][0][0][0][0][0][0][0][0][0][0][3][0][0][4]
+                                    if str(click_element.attrib["class"]) == "android.widget.ImageView":
+                                        click_element = root[0][0][0][0][0][0][0][0][0][0][0][3][0][0][5]
+                            except:
+                                pass
 
                 bounds = click_element.attrib["bounds"]
                 coord = bounds[:len(bounds)-1].replace("[","")
@@ -190,7 +211,8 @@ def main(x_device):
                 lastAction = "EVERYTHING HAS FAILED"
                 device.shell(f'input tap {center[0]} {center[1]}')
                 device.shell(f"input swipe {center[0]} {center[1]+center[1]/2} {center[0]} {center[1]-center[1]/2} 50")  
-        
+                    
+            
         if lastAction == lastActionOld:
             repetition = repetition + 1
         else:
@@ -202,12 +224,14 @@ def main(x_device):
 
 
 if __name__ == '__main__':
-    adb_port = retrive_port.adbPort()
-    output = subprocess.run(['.\\platform-tools\\adb.exe', 'connect', '127.0.0.1:' + adb_port], capture_output=True)
-    if "bad port number" in str(output.stdout.decode()):
-        print("No Bluestacks X instances found")
-    if not adb_port == "none" and not ("already" in str(output.stdout.decode())):
-        print("Connecting to Bluestacks X")
+    output = ''
+    adb_ports = retrive_port.adbPort()
+    for adb_port in adb_ports:
+        output = subprocess.run(['.\\platform-tools\\adb.exe', 'connect', '127.0.0.1:' + adb_port], capture_output=True)
+        if "bad port number" in str(output.stdout.decode()):
+            print("No Bluestacks X instances found")
+        if not adb_port == "none" and not ("already" in str(output.stdout.decode())):
+            print("Connecting to Bluestacks X")
     
     devices = adb_info.get_connected_devices()
     devices.pop(0)
@@ -215,7 +239,7 @@ if __name__ == '__main__':
     if not (devices == []):
         count = 0
         for x in devices:
-            print ('{:<15}'.format(str(x).replace('127.0.0.1:' + adb_port, "Bluestacks X"))+" "+str(count))
+            print ('{:<15}'.format(str(x))+" "+str(count))
             count += 1
         print("Choose:")
         main(int(input()))
