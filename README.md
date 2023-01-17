@@ -1,5 +1,7 @@
 # Appinio-Bot
 
-This a Python script which will be connected to an Android Emulator or even a real phone through ADB to level up an Appinio Account etc
+Appinio-Bot is a Python script that allows users to quickly level up their Appinio account by connecting to an Android emulator or real phone via ADB. The script is designed to automate the process of completing user surveys, also known as "Quickies," within the Appinio app, which enables users to level up their account fast and easy.
 
-currently only works in German (if you want you can change it to your desire)
+Currently, the script is only available in German, but users can easily modify the code to their desired language. This makes it accessible to a wider range of users, regardless of their language preference.
+
+With Appinio-Bot, users can save time and effort. It's important to note that the script is currently only able to answer Quickies and no other tasks within the app.
